@@ -10,10 +10,10 @@ import (
 
 type ReminderService interface {
 	ScheduleReminder(customerID, orderID string, reminderDate string) error
-	GetPendingReminders() (*[]models.Reminder, error)
-	ListReminders() (*[]models.Reminder, error)
-	ListCustomerReminders(customerID string) (*[]models.Reminder, error)
-	GetReminderLogs(reminderID string) (*[]models.ReminderLog, error)
+	GetPendingReminders() ([]models.Reminder, error)
+	ListReminders(page int32, limit int32, sortBy string, sortOrder string, filter string, filterValue string) ([]models.Reminder, error)
+	ListCustomerReminders(customerID string, page int32, limit int32, sortBy string, sortOrder string, filter string, filterValue string) ([]models.Reminder, error)
+	ListReminderLogs(reminderID string, page int32, limit int32, sortBy string, sortOrder string, filter string, filterValue string) ([]models.ReminderLog, error)
 	UpdateReminder(reminderID string, orderID string, reminderDate string) error
 	DeleteReminder(reminderID string) error
 	ToggleReminder(reminderID string) error
@@ -47,16 +47,16 @@ func (s *reminderService) ScheduleReminder(customerID, orderID string, reminderD
 	return s.reminderRepo.ScheduleReminder(reminder)
 }
 
-func (s *reminderService) GetPendingReminders() (*[]models.Reminder, error) {
+func (s *reminderService) GetPendingReminders() ([]models.Reminder, error) {
 	return s.reminderRepo.GetPendingReminders()
 }
 
-func (s *reminderService) ListReminders() (*[]models.Reminder, error) {
-	return s.reminderRepo.ListReminders()
+func (s *reminderService) ListReminders(page int32, limit int32, sortBy string, sortOrder string, filter string, filterValue string) ([]models.Reminder, error) {
+	return s.reminderRepo.ListReminders(page, limit, sortBy, sortOrder, filter, filterValue)
 }
 
-func (s *reminderService) ListCustomerReminders(customerID string) (*[]models.Reminder, error) {
-	return s.reminderRepo.ListCustomerReminders(customerID)
+func (s *reminderService) ListCustomerReminders(customerID string, page int32, limit int32, sortBy string, sortOrder string, filter string, filterValue string) ([]models.Reminder, error) {
+	return s.reminderRepo.ListCustomerReminders(customerID, page, limit, sortBy, sortOrder, filter, filterValue)
 }
 
 func (s *reminderService) UpdateReminder(reminderID string, orderID string, reminderDate string) error {
@@ -83,6 +83,6 @@ func (s *reminderService) ToggleReminder(reminderID string) error {
 	return s.reminderRepo.ToggleReminder(reminderID)
 }
 
-func (s *reminderService) GetReminderLogs(reminderID string) (*[]models.ReminderLog, error) {
-	return s.reminderLogRepo.GetReminderLogsByReminderID(reminderID)
+func (s *reminderService) ListReminderLogs(reminderID string, page int32, limit int32, sortBy string, sortOrder string, filter string, filterValue string) ([]models.ReminderLog, error) {
+	return s.reminderLogRepo.ListReminderLogs(reminderID, page, limit, sortBy, sortOrder, filter, filterValue)
 }

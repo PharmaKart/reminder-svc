@@ -15,7 +15,7 @@ type ReminderHandler interface {
 	UpdateReminder(ctx context.Context, req *proto.UpdateReminderRequest) (*proto.UpdateReminderResponse, error)
 	DeleteReminder(ctx context.Context, req *proto.DeleteReminderRequest) (*proto.DeleteReminderResponse, error)
 	ToggleReminder(ctx context.Context, req *proto.ToggleReminderRequest) (*proto.ToggleReminderResponse, error)
-	GetReminderLogs(ctx context.Context, req *proto.GetReminderLogsRequest) (*proto.GetReminderLogsResponse, error)
+	ListReminderLogs(ctx context.Context, req *proto.ListReminderLogsRequest) (*proto.ListReminderLogsResponse, error)
 }
 
 type reminderHandler struct {
@@ -39,13 +39,13 @@ func (h *reminderHandler) ScheduleReminder(ctx context.Context, req *proto.Sched
 }
 
 func (h *reminderHandler) ListReminders(ctx context.Context, req *proto.ListRemindersRequest) (*proto.ListRemindersResponse, error) {
-	reminders, err := h.reminderService.ListReminders()
+	reminders, err := h.reminderService.ListReminders(req.Page, req.Limit, req.SortBy, req.SortOrder, req.Filter, req.FilterValue)
 	if err != nil {
 		return nil, err
 	}
 
-	protoReminders := make([]*proto.Reminder, len(*reminders))
-	for i, reminder := range *reminders {
+	protoReminders := make([]*proto.Reminder, len(reminders))
+	for i, reminder := range reminders {
 		protoReminders[i] = &proto.Reminder{
 			Id:           reminder.ID.String(),
 			CustomerId:   reminder.CustomerID.String(),
@@ -60,13 +60,13 @@ func (h *reminderHandler) ListReminders(ctx context.Context, req *proto.ListRemi
 }
 
 func (h *reminderHandler) ListCustomerReminders(ctx context.Context, req *proto.ListCustomerRemindersRequest) (*proto.ListRemindersResponse, error) {
-	reminders, err := h.reminderService.ListCustomerReminders(req.CustomerId)
+	reminders, err := h.reminderService.ListCustomerReminders(req.CustomerId, req.Page, req.Limit, req.SortBy, req.SortOrder, req.Filter, req.FilterValue)
 	if err != nil {
 		return nil, err
 	}
 
-	protoReminders := make([]*proto.Reminder, len(*reminders))
-	for i, reminder := range *reminders {
+	protoReminders := make([]*proto.Reminder, len(reminders))
+	for i, reminder := range reminders {
 		protoReminders[i] = &proto.Reminder{
 			Id:           reminder.ID.String(),
 			CustomerId:   reminder.CustomerID.String(),
@@ -107,14 +107,14 @@ func (h *reminderHandler) ToggleReminder(ctx context.Context, req *proto.ToggleR
 	return &proto.ToggleReminderResponse{}, nil
 }
 
-func (h *reminderHandler) GetReminderLogs(ctx context.Context, req *proto.GetReminderLogsRequest) (*proto.GetReminderLogsResponse, error) {
-	reminderLogs, err := h.reminderService.GetReminderLogs(req.ReminderId)
+func (h *reminderHandler) ListReminderLogs(ctx context.Context, req *proto.ListReminderLogsRequest) (*proto.ListReminderLogsResponse, error) {
+	reminderLogs, err := h.reminderService.ListReminderLogs(req.ReminderId, req.Page, req.Limit, req.SortBy, req.SortOrder, req.Filter, req.FilterValue)
 	if err != nil {
 		return nil, err
 	}
 
-	protoReminderLogs := make([]*proto.ReminderLog, len(*reminderLogs))
-	for i, reminderLog := range *reminderLogs {
+	protoReminderLogs := make([]*proto.ReminderLog, len(reminderLogs))
+	for i, reminderLog := range reminderLogs {
 		protoReminderLogs[i] = &proto.ReminderLog{
 			Id:         reminderLog.ID.String(),
 			ReminderId: reminderLog.ReminderID.String(),
@@ -124,5 +124,5 @@ func (h *reminderHandler) GetReminderLogs(ctx context.Context, req *proto.GetRem
 		}
 	}
 
-	return &proto.GetReminderLogsResponse{Logs: protoReminderLogs}, nil
+	return &proto.ListReminderLogsResponse{Logs: protoReminderLogs}, nil
 }

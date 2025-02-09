@@ -7,9 +7,9 @@ import (
 
 type ReminderRepository interface {
 	ScheduleReminder(reminder *models.Reminder) error
-	GetPendingReminders() (*[]models.Reminder, error)
-	ListReminders() (*[]models.Reminder, error)
-	ListCustomerReminders(customerID string) (*[]models.Reminder, error)
+	GetPendingReminders() ([]models.Reminder, error)
+	ListReminders(page int32, limit int32, sortBy string, sortOrder string, filter string, filterValue string) ([]models.Reminder, error)
+	ListCustomerReminders(customerID string, page int32, limit int32, sortBy string, sortOrder string, filter string, filterValue string) ([]models.Reminder, error)
 	UpdateReminder(reminder *models.Reminder) error
 	DeleteReminder(reminderID string) error
 	ToggleReminder(reminderID string) error
@@ -27,22 +27,60 @@ func (r *reminderRepository) ScheduleReminder(reminder *models.Reminder) error {
 	return r.db.Create(reminder).Error
 }
 
-func (r *reminderRepository) GetPendingReminders() (*[]models.Reminder, error) {
+func (r *reminderRepository) GetPendingReminders() ([]models.Reminder, error) {
 	var reminders []models.Reminder
 	err := r.db.Where("sent = ?", false).Find(&reminders).Error
-	return &reminders, err
+	return reminders, err
 }
 
-func (r *reminderRepository) ListReminders() (*[]models.Reminder, error) {
+func (r *reminderRepository) ListReminders(page int32, limit int32, sortBy string, sortOrder string, filter string, filterValue string) ([]models.Reminder, error) {
 	var reminders []models.Reminder
-	err := r.db.Find(&reminders).Error
-	return &reminders, err
+	if page <= 0 {
+		page = 1
+	}
+	if limit <= 0 {
+		limit = 10
+	}
+
+	query := r.db
+	if filter != "" && filterValue != "" {
+		query = query.Where(filter+" = ?", filterValue)
+	}
+
+	if sortBy != "" {
+		if sortOrder == "" {
+			sortOrder = "asc"
+		}
+		query = query.Order(sortBy + " " + sortOrder)
+	}
+
+	err := query.Offset(int((page - 1) * limit)).Limit(int(limit)).Find(&reminders).Error
+	return reminders, err
 }
 
-func (r *reminderRepository) ListCustomerReminders(customerID string) (*[]models.Reminder, error) {
+func (r *reminderRepository) ListCustomerReminders(customerID string, page int32, limit int32, sortBy string, sortOrder string, filter string, filterValue string) ([]models.Reminder, error) {
 	var reminders []models.Reminder
-	err := r.db.Where("customer_id = ?", customerID).Find(&reminders).Error
-	return &reminders, err
+	if page <= 0 {
+		page = 1
+	}
+	if limit <= 0 {
+		limit = 10
+	}
+
+	query := r.db
+	if filter != "" && filterValue != "" {
+		query = query.Where(filter+" = ?", filterValue)
+	}
+
+	if sortBy != "" {
+		if sortOrder == "" {
+			sortOrder = "asc"
+		}
+		query = query.Order(sortBy + " " + sortOrder)
+	}
+
+	err := query.Offset(int((page - 1) * limit)).Limit(int(limit)).Find(&reminders).Error
+	return reminders, err
 }
 
 func (r *reminderRepository) UpdateReminder(reminder *models.Reminder) error {

@@ -7,7 +7,7 @@ import (
 
 type ReminderLogRepository interface {
 	CreateReminderLog(reminderLog *models.ReminderLog) error
-	GetReminderLogsByReminderID(reminderID string) (*[]models.ReminderLog, error)
+	ListReminderLogs(reminderID string, page int32, limit int32, sortBy string, sortOrder string, filter string, filterValue string) ([]models.ReminderLog, error)
 }
 
 type reminderLogRepository struct {
@@ -22,8 +22,27 @@ func (r *reminderLogRepository) CreateReminderLog(reminderLog *models.ReminderLo
 	return r.db.Create(reminderLog).Error
 }
 
-func (r *reminderLogRepository) GetReminderLogsByReminderID(reminderID string) (*[]models.ReminderLog, error) {
+func (r *reminderLogRepository) ListReminderLogs(reminderID string, page int32, limit int32, sortBy string, sortOrder string, filter string, filterValue string) ([]models.ReminderLog, error) {
 	var reminderLogs []models.ReminderLog
-	err := r.db.Where("reminder_id = ?", reminderID).Find(&reminderLogs).Error
-	return &reminderLogs, err
+	if page <= 0 {
+		page = 1
+	}
+	if limit <= 0 {
+		limit = 10
+	}
+
+	query := r.db
+	if filter != "" && filterValue != "" {
+		query = query.Where(filter+" = ?", filterValue)
+	}
+
+	if sortBy != "" {
+		if sortOrder == "" {
+			sortOrder = "asc"
+		}
+		query = query.Order(sortBy + " " + sortOrder)
+	}
+
+	err := query.Offset(int((page - 1) * limit)).Limit(int(limit)).Find(&reminderLogs).Error
+	return reminderLogs, err
 }

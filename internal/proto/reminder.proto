@@ -11,7 +11,7 @@ service ReminderService {
     rpc UpdateReminder(UpdateReminderRequest) returns (UpdateReminderResponse);
     rpc DeleteReminder(DeleteReminderRequest) returns (DeleteReminderResponse);
     rpc ToggleReminder(ToggleReminderRequest) returns (ToggleReminderResponse);
-    rpc GetReminderLogs(GetReminderLogsRequest) returns (GetReminderLogsResponse);
+    rpc ListReminderLogs(ListReminderLogsRequest) returns (ListReminderLogsResponse);
 }
 
 message Reminder {
@@ -43,6 +43,12 @@ message ScheduleReminderResponse {
 }
 
 message ListRemindersRequest {
+    int32 page = 1;
+    int32 limit = 2;
+    string sort_by = 3;
+    string sort_order = 4;
+    string filter = 5;
+    string filter_value = 6;
 }
 
 message ListRemindersResponse {
@@ -51,6 +57,12 @@ message ListRemindersResponse {
 
 message ListCustomerRemindersRequest {
     string customer_id = 1;
+    int32 page = 2;
+    int32 limit = 3;
+    string sort_by = 4;
+    string sort_order = 5;
+    string filter = 6;
+    string filter_value = 7;
 }
 
 message UpdateReminderRequest {
@@ -79,10 +91,16 @@ message ToggleReminderResponse {
     string message = 1;
 }
 
-message GetReminderLogsRequest {
+message ListReminderLogsRequest {
     string reminder_id = 1;
+    int32 page = 2;
+    int32 limit = 3;
+    string sort_by = 4;
+    string sort_order = 5;
+    string filter = 6;
+    string filter_value = 7;
 }
 
-message GetReminderLogsResponse {
+message ListReminderLogsResponse {
     repeated ReminderLog logs = 1;
 }
