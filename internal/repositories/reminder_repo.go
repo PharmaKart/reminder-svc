@@ -8,8 +8,8 @@ import (
 type ReminderRepository interface {
 	ScheduleReminder(reminder *models.Reminder) error
 	GetPendingReminders() ([]models.Reminder, error)
-	ListReminders(page int32, limit int32, sortBy string, sortOrder string, filter string, filterValue string) ([]models.Reminder, error)
-	ListCustomerReminders(customerID string, page int32, limit int32, sortBy string, sortOrder string, filter string, filterValue string) ([]models.Reminder, error)
+	ListReminders(page int32, limit int32, sortBy string, sortOrder string, filter string, filterValue string) ([]models.Reminder, int32, error)
+	ListCustomerReminders(customerID string, page int32, limit int32, sortBy string, sortOrder string, filter string, filterValue string) ([]models.Reminder, int32, error)
 	UpdateReminder(reminder *models.Reminder) error
 	DeleteReminder(reminderID string) error
 	ToggleReminder(reminderID string) error
@@ -33,8 +33,10 @@ func (r *reminderRepository) GetPendingReminders() ([]models.Reminder, error) {
 	return reminders, err
 }
 
-func (r *reminderRepository) ListReminders(page int32, limit int32, sortBy string, sortOrder string, filter string, filterValue string) ([]models.Reminder, error) {
+func (r *reminderRepository) ListReminders(page int32, limit int32, sortBy string, sortOrder string, filter string, filterValue string) ([]models.Reminder, int32, error) {
 	var reminders []models.Reminder
+	var total int64
+
 	if page <= 0 {
 		page = 1
 	}
@@ -55,11 +57,21 @@ func (r *reminderRepository) ListReminders(page int32, limit int32, sortBy strin
 	}
 
 	err := query.Offset(int((page - 1) * limit)).Limit(int(limit)).Find(&reminders).Error
-	return reminders, err
+	if err != nil {
+		return nil, 0, err
+	}
+
+	err = r.db.Model(&models.Reminder{}).Count(&total).Error
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return reminders, int32(total), err
 }
 
-func (r *reminderRepository) ListCustomerReminders(customerID string, page int32, limit int32, sortBy string, sortOrder string, filter string, filterValue string) ([]models.Reminder, error) {
+func (r *reminderRepository) ListCustomerReminders(customerID string, page int32, limit int32, sortBy string, sortOrder string, filter string, filterValue string) ([]models.Reminder, int32, error) {
 	var reminders []models.Reminder
+	var total int64
 	if page <= 0 {
 		page = 1
 	}
@@ -80,7 +92,16 @@ func (r *reminderRepository) ListCustomerReminders(customerID string, page int32
 	}
 
 	err := query.Offset(int((page - 1) * limit)).Limit(int(limit)).Find(&reminders).Error
-	return reminders, err
+	if err != nil {
+		return nil, 0, err
+	}
+
+	err = r.db.Model(&models.Reminder{}).Where("customer_id = ?", customerID).Count(&total).Error
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return reminders, int32(total), err
 }
 
 func (r *reminderRepository) UpdateReminder(reminder *models.Reminder) error {

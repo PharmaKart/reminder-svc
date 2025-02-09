@@ -39,7 +39,7 @@ func (h *reminderHandler) ScheduleReminder(ctx context.Context, req *proto.Sched
 }
 
 func (h *reminderHandler) ListReminders(ctx context.Context, req *proto.ListRemindersRequest) (*proto.ListRemindersResponse, error) {
-	reminders, err := h.reminderService.ListReminders(req.Page, req.Limit, req.SortBy, req.SortOrder, req.Filter, req.FilterValue)
+	reminders, total, err := h.reminderService.ListReminders(req.Page, req.Limit, req.SortBy, req.SortOrder, req.Filter, req.FilterValue)
 	if err != nil {
 		return nil, err
 	}
@@ -56,11 +56,16 @@ func (h *reminderHandler) ListReminders(ctx context.Context, req *proto.ListRemi
 		}
 	}
 
-	return &proto.ListRemindersResponse{Reminders: protoReminders}, nil
+	return &proto.ListRemindersResponse{
+		Reminders: protoReminders,
+		Total:     total,
+		Page:      req.Page,
+		Limit:     req.Limit,
+	}, nil
 }
 
 func (h *reminderHandler) ListCustomerReminders(ctx context.Context, req *proto.ListCustomerRemindersRequest) (*proto.ListRemindersResponse, error) {
-	reminders, err := h.reminderService.ListCustomerReminders(req.CustomerId, req.Page, req.Limit, req.SortBy, req.SortOrder, req.Filter, req.FilterValue)
+	reminders, total, err := h.reminderService.ListCustomerReminders(req.CustomerId, req.Page, req.Limit, req.SortBy, req.SortOrder, req.Filter, req.FilterValue)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +82,12 @@ func (h *reminderHandler) ListCustomerReminders(ctx context.Context, req *proto.
 		}
 	}
 
-	return &proto.ListRemindersResponse{Reminders: protoReminders}, nil
+	return &proto.ListRemindersResponse{
+		Reminders: protoReminders,
+		Total:     total,
+		Page:      req.Page,
+		Limit:     req.Limit,
+	}, nil
 }
 
 func (h *reminderHandler) UpdateReminder(ctx context.Context, req *proto.UpdateReminderRequest) (*proto.UpdateReminderResponse, error) {
@@ -108,7 +118,7 @@ func (h *reminderHandler) ToggleReminder(ctx context.Context, req *proto.ToggleR
 }
 
 func (h *reminderHandler) ListReminderLogs(ctx context.Context, req *proto.ListReminderLogsRequest) (*proto.ListReminderLogsResponse, error) {
-	reminderLogs, err := h.reminderService.ListReminderLogs(req.ReminderId, req.Page, req.Limit, req.SortBy, req.SortOrder, req.Filter, req.FilterValue)
+	reminderLogs, total, err := h.reminderService.ListReminderLogs(req.ReminderId, req.Page, req.Limit, req.SortBy, req.SortOrder, req.Filter, req.FilterValue)
 	if err != nil {
 		return nil, err
 	}
@@ -124,5 +134,10 @@ func (h *reminderHandler) ListReminderLogs(ctx context.Context, req *proto.ListR
 		}
 	}
 
-	return &proto.ListReminderLogsResponse{Logs: protoReminderLogs}, nil
+	return &proto.ListReminderLogsResponse{
+		Logs:  protoReminderLogs,
+		Total: total,
+		Page:  req.Page,
+		Limit: req.Limit,
+	}, nil
 }

@@ -53,6 +53,9 @@ message ListRemindersRequest {
 
 message ListRemindersResponse {
     repeated Reminder reminders = 1;
+    int32 total = 2;
+    int32 page = 3;
+    int32 limit = 4;
 }
 
 message ListCustomerRemindersRequest {
@@ -103,4 +106,7 @@ message ListReminderLogsRequest {
 
 message ListReminderLogsResponse {
     repeated ReminderLog logs = 1;
+    int32 total = 2;
+    int32 page = 3;
+    int32 limit = 4;
 }

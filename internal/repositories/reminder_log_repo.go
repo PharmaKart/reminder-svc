@@ -7,7 +7,7 @@ import (
 
 type ReminderLogRepository interface {
 	CreateReminderLog(reminderLog *models.ReminderLog) error
-	ListReminderLogs(reminderID string, page int32, limit int32, sortBy string, sortOrder string, filter string, filterValue string) ([]models.ReminderLog, error)
+	ListReminderLogs(reminderID string, page int32, limit int32, sortBy string, sortOrder string, filter string, filterValue string) ([]models.ReminderLog, int32, error)
 }
 
 type reminderLogRepository struct {
@@ -22,8 +22,10 @@ func (r *reminderLogRepository) CreateReminderLog(reminderLog *models.ReminderLo
 	return r.db.Create(reminderLog).Error
 }
 
-func (r *reminderLogRepository) ListReminderLogs(reminderID string, page int32, limit int32, sortBy string, sortOrder string, filter string, filterValue string) ([]models.ReminderLog, error) {
+func (r *reminderLogRepository) ListReminderLogs(reminderID string, page int32, limit int32, sortBy string, sortOrder string, filter string, filterValue string) ([]models.ReminderLog, int32, error) {
 	var reminderLogs []models.ReminderLog
+	var total int64
+
 	if page <= 0 {
 		page = 1
 	}
@@ -44,5 +46,14 @@ func (r *reminderLogRepository) ListReminderLogs(reminderID string, page int32, 
 	}
 
 	err := query.Offset(int((page - 1) * limit)).Limit(int(limit)).Find(&reminderLogs).Error
-	return reminderLogs, err
+	if err != nil {
+		return nil, 0, err
+	}
+
+	err = query.Model(&models.ReminderLog{}).Count(&total).Error
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return reminderLogs, int32(total), err
 }
