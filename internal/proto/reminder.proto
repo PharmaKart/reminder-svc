@@ -1,0 +1,88 @@
+syntax = "proto3";
+
+package reminder;
+
+option go_package = "../proto";
+
+service ReminderService {
+    rpc ScheduleReminder(ScheduleReminderRequest) returns (ScheduleReminderResponse);
+    rpc ListReminders(ListRemindersRequest) returns (ListRemindersResponse);
+    rpc ListCustomerReminders(ListCustomerRemindersRequest) returns (ListRemindersResponse);
+    rpc UpdateReminder(UpdateReminderRequest) returns (UpdateReminderResponse);
+    rpc DeleteReminder(DeleteReminderRequest) returns (DeleteReminderResponse);
+    rpc ToggleReminder(ToggleReminderRequest) returns (ToggleReminderResponse);
+    rpc GetReminderLogs(GetReminderLogsRequest) returns (GetReminderLogsResponse);
+}
+
+message Reminder {
+    string id = 1;
+    string customer_id = 2;
+    string order_id = 3;
+    string reminder_date = 4;
+    string last_sent_at = 5;
+    bool enabled = 6;
+    string created_at = 7;
+}
+
+message ReminderLog {
+    string id = 1;
+    string reminder_id = 2;
+    string order_id = 3;
+    string status = 4;
+    string created_at = 5;
+}
+
+message ScheduleReminderRequest {
+    string customer_id = 1;
+    string order_id = 2;
+    string reminder_date = 3;
+}
+
+message ScheduleReminderResponse {
+    string reminder_id = 1;
+}
+
+message ListRemindersRequest {
+}
+
+message ListRemindersResponse {
+    repeated Reminder reminders = 1;
+}
+
+message ListCustomerRemindersRequest {
+    string customer_id = 1;
+}
+
+message UpdateReminderRequest {
+    string reminder_id = 1;
+    string order_id = 2;
+    string reminder_date = 3;
+}
+
+message UpdateReminderResponse {
+    string message = 1;
+}
+
+message DeleteReminderRequest {
+    string reminder_id = 1;
+}
+
+message DeleteReminderResponse {
+    string message = 1;
+}
+
+message ToggleReminderRequest {
+    string reminder_id = 1;
+}
+
+message ToggleReminderResponse {
+    string message = 1;
+}
+
+message GetReminderLogsRequest {
+    string reminder_id = 1;
+}
+
+message GetReminderLogsResponse {
+    repeated ReminderLog logs = 1;
+}
