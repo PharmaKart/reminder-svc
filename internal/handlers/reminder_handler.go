@@ -6,6 +6,8 @@ import (
 	"github.com/PharmaKart/reminder-svc/internal/proto"
 	"github.com/PharmaKart/reminder-svc/internal/repositories"
 	"github.com/PharmaKart/reminder-svc/internal/services"
+	"github.com/PharmaKart/reminder-svc/pkg/utils"
+	"github.com/robfig/cron/v3"
 )
 
 type ReminderHandler interface {
@@ -30,7 +32,7 @@ func NewReminderHandler(reminderRepo repositories.ReminderRepository, reminderLo
 }
 
 func (h *reminderHandler) ScheduleReminder(ctx context.Context, req *proto.ScheduleReminderRequest) (*proto.ScheduleReminderResponse, error) {
-	err := h.reminderService.ScheduleReminder(req.CustomerId, req.OrderId, req.ReminderDate)
+	err := h.reminderService.ScheduleReminder(req.CustomerId, req.OrderId, req.ProductId, req.ReminderDate)
 	if err != nil {
 		return nil, err
 	}
@@ -140,4 +142,20 @@ func (h *reminderHandler) ListReminderLogs(ctx context.Context, req *proto.ListR
 		Page:  req.Page,
 		Limit: req.Limit,
 	}, nil
+}
+
+func (h *reminderHandler) SendReminders() {
+	c := cron.New()
+
+	_, err := c.AddFunc("0 0 * * *", func() {
+		h.reminderService.GetPendingReminders()
+	})
+
+	if err != nil {
+		utils.Error("Failed to schedule reminder job", map[string]interface{}{
+			"error": err,
+		})
+	}
+
+	c.Start()
 }

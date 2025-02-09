@@ -18,10 +18,11 @@ message Reminder {
     string id = 1;
     string customer_id = 2;
     string order_id = 3;
-    string reminder_date = 4;
-    string last_sent_at = 5;
-    bool enabled = 6;
-    string created_at = 7;
+    string product_id = 4;
+    string reminder_date = 5;
+    string last_sent_at = 6;
+    bool enabled = 7;
+    string created_at = 8;
 }
 
 message ReminderLog {
@@ -35,7 +36,8 @@ message ReminderLog {
 message ScheduleReminderRequest {
     string customer_id = 1;
     string order_id = 2;
-    string reminder_date = 3;
+    string product_id = 3;
+    string reminder_date = 4;
 }
 
 message ScheduleReminderResponse {

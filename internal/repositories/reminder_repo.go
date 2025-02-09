@@ -1,13 +1,15 @@
 package repositories
 
 import (
+	"time"
+
 	"github.com/PharmaKart/reminder-svc/internal/models"
 	"gorm.io/gorm"
 )
 
 type ReminderRepository interface {
 	ScheduleReminder(reminder *models.Reminder) error
-	GetPendingReminders() ([]models.Reminder, error)
+	GetPendingReminders() ([]ReminderWithCustomer, error)
 	ListReminders(page int32, limit int32, sortBy string, sortOrder string, filter string, filterValue string) ([]models.Reminder, int32, error)
 	ListCustomerReminders(customerID string, page int32, limit int32, sortBy string, sortOrder string, filter string, filterValue string) ([]models.Reminder, int32, error)
 	UpdateReminder(reminder *models.Reminder) error
@@ -27,10 +29,26 @@ func (r *reminderRepository) ScheduleReminder(reminder *models.Reminder) error {
 	return r.db.Create(reminder).Error
 }
 
-func (r *reminderRepository) GetPendingReminders() ([]models.Reminder, error) {
-	var reminders []models.Reminder
-	err := r.db.Where("sent = ?", false).Find(&reminders).Error
-	return reminders, err
+type ReminderWithCustomer struct {
+	Reminder models.Reminder
+	Email    string
+	Phone    *string
+	Product  string
+}
+
+func (r *reminderRepository) GetPendingReminders() ([]ReminderWithCustomer, error) {
+	var results []ReminderWithCustomer
+
+	// Fetch reminders and join with customers to get email and phone
+	err := r.db.
+		Table("reminders").
+		Select("reminders.*, customers.email, customers.phone").
+		Joins("JOIN customers ON customers.id = reminders.customer_id").
+		Joins("JOIN products ON products.id = reminders.product_id").
+		Where("reminder_date <= ? AND enabled = ?", time.Now(), true).
+		Scan(&results).Error
+
+	return results, err
 }
 
 func (r *reminderRepository) ListReminders(page int32, limit int32, sortBy string, sortOrder string, filter string, filterValue string) ([]models.Reminder, int32, error) {

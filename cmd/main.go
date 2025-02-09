@@ -26,6 +26,9 @@ func main() {
 	// Initialize handlers
 	reminderHandler := handlers.NewReminderHandler(reminderRepo, reminderLogRepo)
 
+	// Cron job to send reminders
+	go reminderHandler.SendReminders()
+
 	// Initialize gRPC server
 	lis, err := net.Listen("tcp", ":"+cfg.Port)
 
