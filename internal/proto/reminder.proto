@@ -73,7 +73,8 @@ message ListCustomerRemindersRequest {
 message UpdateReminderRequest {
     string reminder_id = 1;
     string order_id = 2;
-    string reminder_date = 3;
+    string customer_id = 3;
+    string reminder_date = 4;
 }
 
 message UpdateReminderResponse {
@@ -82,6 +83,7 @@ message UpdateReminderResponse {
 
 message DeleteReminderRequest {
     string reminder_id = 1;
+    string customer_id = 2;
 }
 
 message DeleteReminderResponse {
@@ -90,6 +92,7 @@ message DeleteReminderResponse {
 
 message ToggleReminderRequest {
     string reminder_id = 1;
+    string customer_id = 2;
 }
 
 message ToggleReminderResponse {
@@ -98,12 +101,13 @@ message ToggleReminderResponse {
 
 message ListReminderLogsRequest {
     string reminder_id = 1;
-    int32 page = 2;
-    int32 limit = 3;
-    string sort_by = 4;
-    string sort_order = 5;
-    string filter = 6;
-    string filter_value = 7;
+    string customer_id = 2;
+    int32 page = 3;
+    int32 limit = 4;
+    string sort_by = 5;
+    string sort_order = 6;
+    string filter = 7;
+    string filter_value = 8;
 }
 
 message ListReminderLogsResponse {

@@ -4,10 +4,12 @@ import (
 	"time"
 
 	"github.com/PharmaKart/reminder-svc/internal/models"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 type ReminderRepository interface {
+	GetReminderCustomer(reminderID string) (string, error)
 	ScheduleReminder(reminder *models.Reminder) error
 	GetPendingReminders() ([]ReminderWithCustomer, error)
 	ListReminders(page int32, limit int32, sortBy string, sortOrder string, filter string, filterValue string) ([]models.Reminder, int32, error)
@@ -34,6 +36,12 @@ type ReminderWithCustomer struct {
 	Email    string
 	Phone    *string
 	Product  string
+}
+
+func (r *reminderRepository) GetReminderCustomer(reminderID string) (string, error) {
+	var customerID uuid.UUID
+	err := r.db.Table("reminders").Select("customer_id").Where("id = ?", reminderID).Row().Scan(&customerID)
+	return customerID.String(), err
 }
 
 func (r *reminderRepository) GetPendingReminders() ([]ReminderWithCustomer, error) {

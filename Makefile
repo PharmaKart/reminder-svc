@@ -1,7 +1,6 @@
 # Variables
 PROJECT_NAME = reminder-svc
 GATEWAY_NAME = gateway-svc
-ORDER_SERVICE_NAME = order-svc
 GO = go
 PROTO_DIR = internal/proto
 PROTO_FILE = $(PROTO_DIR)/reminder.proto
@@ -27,8 +26,6 @@ proto:
 	protoc --go_out=$(PROTO_OUT) --go-grpc_out=$(PROTO_OUT) $(PROTO_FILE)
 	cp $(PROTO_DIR)/reminder.pb.go ../$(GATEWAY_NAME)/internal/proto/reminder.pb.go
 	cp $(PROTO_DIR)/reminder_grpc.pb.go ../$(GATEWAY_NAME)/internal/proto/reminder_grpc.pb.go
-	cp $(PROTO_DIR)/reminder.pb.go ../$(ORDER_SERVICE_NAME)/internal/proto/reminder.pb.go
-	cp $(PROTO_DIR)/reminder_grpc.pb.go ../$(ORDER_SERVICE_NAME)/internal/proto/reminder_grpc.pb.go
 
 # Clean up build artifacts
 clean:

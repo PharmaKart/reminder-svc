@@ -93,7 +93,7 @@ func (h *reminderHandler) ListCustomerReminders(ctx context.Context, req *proto.
 }
 
 func (h *reminderHandler) UpdateReminder(ctx context.Context, req *proto.UpdateReminderRequest) (*proto.UpdateReminderResponse, error) {
-	err := h.reminderService.UpdateReminder(req.ReminderId, req.OrderId, req.ReminderDate)
+	err := h.reminderService.UpdateReminder(req.ReminderId, req.CustomerId, req.OrderId, req.ReminderDate)
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +102,7 @@ func (h *reminderHandler) UpdateReminder(ctx context.Context, req *proto.UpdateR
 }
 
 func (h *reminderHandler) DeleteReminder(ctx context.Context, req *proto.DeleteReminderRequest) (*proto.DeleteReminderResponse, error) {
-	err := h.reminderService.DeleteReminder(req.ReminderId)
+	err := h.reminderService.DeleteReminder(req.ReminderId, req.CustomerId)
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +111,7 @@ func (h *reminderHandler) DeleteReminder(ctx context.Context, req *proto.DeleteR
 }
 
 func (h *reminderHandler) ToggleReminder(ctx context.Context, req *proto.ToggleReminderRequest) (*proto.ToggleReminderResponse, error) {
-	err := h.reminderService.ToggleReminder(req.ReminderId)
+	err := h.reminderService.ToggleReminder(req.ReminderId, req.ReminderId)
 	if err != nil {
 		return nil, err
 	}
@@ -120,7 +120,7 @@ func (h *reminderHandler) ToggleReminder(ctx context.Context, req *proto.ToggleR
 }
 
 func (h *reminderHandler) ListReminderLogs(ctx context.Context, req *proto.ListReminderLogsRequest) (*proto.ListReminderLogsResponse, error) {
-	reminderLogs, total, err := h.reminderService.ListReminderLogs(req.ReminderId, req.Page, req.Limit, req.SortBy, req.SortOrder, req.Filter, req.FilterValue)
+	reminderLogs, total, err := h.reminderService.ListReminderLogs(req.ReminderId, req.CustomerId, req.Page, req.Limit, req.SortBy, req.SortOrder, req.Filter, req.FilterValue)
 	if err != nil {
 		return nil, err
 	}

@@ -2,6 +2,7 @@ package services
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -17,10 +18,10 @@ type ReminderService interface {
 	GetPendingReminders() ([]repositories.ReminderWithCustomer, error)
 	ListReminders(page int32, limit int32, sortBy string, sortOrder string, filter string, filterValue string) ([]models.Reminder, int32, error)
 	ListCustomerReminders(customerID string, page int32, limit int32, sortBy string, sortOrder string, filter string, filterValue string) ([]models.Reminder, int32, error)
-	ListReminderLogs(reminderID string, page int32, limit int32, sortBy string, sortOrder string, filter string, filterValue string) ([]models.ReminderLog, int32, error)
-	UpdateReminder(reminderID string, orderID string, reminderDate string) error
-	DeleteReminder(reminderID string) error
-	ToggleReminder(reminderID string) error
+	ListReminderLogs(reminderID string, customerId string, page int32, limit int32, sortBy string, sortOrder string, filter string, filterValue string) ([]models.ReminderLog, int32, error)
+	UpdateReminder(reminderID string, customerId string, orderID string, reminderDate string) error
+	DeleteReminder(reminderID string, customerId string) error
+	ToggleReminder(reminderID string, customerId string) error
 }
 
 type reminderService struct {
@@ -65,7 +66,15 @@ func (s *reminderService) ListCustomerReminders(customerID string, page int32, l
 	return s.reminderRepo.ListCustomerReminders(customerID, page, limit, sortBy, sortOrder, filter, filterValue)
 }
 
-func (s *reminderService) UpdateReminder(reminderID string, orderID string, reminderDate string) error {
+func (s *reminderService) UpdateReminder(reminderID string, customerId string, orderID string, reminderDate string) error {
+	customerID, err := s.reminderRepo.GetReminderCustomer(reminderID)
+	if err != nil {
+		return err
+	}
+
+	if customerId != customerID {
+		return errors.New("Access denied")
+	}
 	reminder_id, err := uuid.Parse(reminderID)
 	order_id, err := uuid.Parse(orderID)
 	reminder_date, err := time.Parse(time.RFC3339, reminderDate)
@@ -81,15 +90,42 @@ func (s *reminderService) UpdateReminder(reminderID string, orderID string, remi
 	return s.reminderRepo.UpdateReminder(reminder)
 }
 
-func (s *reminderService) DeleteReminder(reminderID string) error {
+func (s *reminderService) DeleteReminder(reminderID string, customerId string) error {
+	customerID, err := s.reminderRepo.GetReminderCustomer(reminderID)
+	if err != nil {
+		return err
+	}
+
+	if customerId != customerID {
+		return errors.New("Access denied")
+	}
+
 	return s.reminderRepo.DeleteReminder(reminderID)
 }
 
-func (s *reminderService) ToggleReminder(reminderID string) error {
+func (s *reminderService) ToggleReminder(reminderID string, customerId string) error {
+	customerID, err := s.reminderRepo.GetReminderCustomer(reminderID)
+	if err != nil {
+		return err
+	}
+
+	if customerId != customerID {
+		return errors.New("Access denied")
+	}
+
 	return s.reminderRepo.ToggleReminder(reminderID)
 }
 
-func (s *reminderService) ListReminderLogs(reminderID string, page int32, limit int32, sortBy string, sortOrder string, filter string, filterValue string) ([]models.ReminderLog, int32, error) {
+func (s *reminderService) ListReminderLogs(reminderID string, customerId string, page int32, limit int32, sortBy string, sortOrder string, filter string, filterValue string) ([]models.ReminderLog, int32, error) {
+	customerID, err := s.reminderRepo.GetReminderCustomer(reminderID)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	if customerId != customerID {
+		return nil, 0, errors.New("Access denied")
+	}
+
 	return s.reminderLogRepo.ListReminderLogs(reminderID, page, limit, sortBy, sortOrder, filter, filterValue)
 }
 
