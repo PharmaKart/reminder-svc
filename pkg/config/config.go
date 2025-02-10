@@ -23,8 +23,9 @@ type Config struct {
 func LoadConfig() *Config {
 	// Load environment variables from .env file
 	if err := godotenv.Load(); err != nil {
-		log.Fatal("No .env file found, using system environment variables", nil)
+		log.Println("No .env file found, using system environment variables")
 	}
+
 	return &Config{
 		Port:                  getEnv("PORT", "50055"),
 		DBConnString:          getDBConnString(),
