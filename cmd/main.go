@@ -9,7 +9,6 @@ import (
 	"github.com/PharmaKart/reminder-svc/pkg/config"
 	"github.com/PharmaKart/reminder-svc/pkg/utils"
 	"google.golang.org/grpc"
-	"gorm.io/gorm"
 )
 
 func main() {
@@ -19,9 +18,17 @@ func main() {
 	// Load configuration
 	cfg := config.LoadConfig()
 
+	// Initialize database connection
+	db, err := utils.ConnectDB(cfg)
+	if err != nil {
+		utils.Logger.Fatal("Failed to connect to database", map[string]interface{}{
+			"error": err,
+		})
+	}
+
 	// Initialize repositories
-	reminderRepo := repositories.NewReminderRepository(&gorm.DB{})
-	reminderLogRepo := repositories.NewReminderLogRepository(&gorm.DB{})
+	reminderRepo := repositories.NewReminderRepository(db)
+	reminderLogRepo := repositories.NewReminderLogRepository(db)
 
 	// Initialize handlers
 	reminderHandler := handlers.NewReminderHandler(reminderRepo, reminderLogRepo)
