@@ -6,6 +6,7 @@ import (
 	"github.com/PharmaKart/reminder-svc/internal/proto"
 	"github.com/PharmaKart/reminder-svc/internal/repositories"
 	"github.com/PharmaKart/reminder-svc/internal/services"
+	"github.com/PharmaKart/reminder-svc/pkg/config"
 	"github.com/PharmaKart/reminder-svc/pkg/utils"
 	"github.com/robfig/cron/v3"
 )
@@ -144,11 +145,11 @@ func (h *reminderHandler) ListReminderLogs(ctx context.Context, req *proto.ListR
 	}, nil
 }
 
-func (h *reminderHandler) SendReminders() {
+func (h *reminderHandler) StartReminderService(cfg *config.Config) {
 	c := cron.New()
 
 	_, err := c.AddFunc("0 0 * * *", func() {
-		h.reminderService.GetPendingReminders()
+		h.reminderService.StartReminderService(cfg)
 	})
 
 	if err != nil {

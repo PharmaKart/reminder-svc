@@ -22,6 +22,7 @@ type ReminderService interface {
 	UpdateReminder(reminderID string, customerId string, orderID string, reminderDate string) error
 	DeleteReminder(reminderID string, customerId string) error
 	ToggleReminder(reminderID string, customerId string) error
+	StartReminderService(cfg *config.Config)
 }
 
 type reminderService struct {
@@ -139,7 +140,7 @@ type ReminderMessage struct {
 	ReminderDate string `json:"reminder_date"`
 }
 
-func (s *reminderService) SendReminderAlert(cfg *config.Config) {
+func (s *reminderService) StartReminderService(cfg *config.Config) {
 	// Get pending reminders
 	reminders, err := s.GetPendingReminders()
 	if err != nil {
