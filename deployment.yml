@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reminder-deployment
+  labels:
+    app: pharmakart
+spec:
+  selector:
+    matchLabels:
+      app: pharmakart
+      service: reminder
+  template:
+    metadata:
+      labels:
+        app: pharmakart
+        service: reminder
+    spec:
+      containers:
+      - name: pharmakart-reminder
+        image: ${REPOSITORY_URI}:${IMAGE_TAG}
+        resources:
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
