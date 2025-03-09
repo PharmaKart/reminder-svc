@@ -7,6 +7,7 @@ import (
 	"github.com/PharmaKart/reminder-svc/internal/repositories"
 	"github.com/PharmaKart/reminder-svc/internal/services"
 	"github.com/PharmaKart/reminder-svc/pkg/config"
+	"github.com/PharmaKart/reminder-svc/pkg/errors"
 	"github.com/PharmaKart/reminder-svc/pkg/utils"
 	"github.com/robfig/cron/v3"
 )
@@ -35,7 +36,23 @@ func NewReminderHandler(reminderRepo repositories.ReminderRepository, reminderLo
 func (h *reminderHandler) ScheduleReminder(ctx context.Context, req *proto.ScheduleReminderRequest) (*proto.ScheduleReminderResponse, error) {
 	err := h.reminderService.ScheduleReminder(req.CustomerId, req.OrderId, req.ProductId, req.ReminderDate)
 	if err != nil {
-		return nil, err
+		if appErr, ok := errors.IsAppError(err); ok {
+			return &proto.ScheduleReminderResponse{
+				Success: false,
+				Error: &proto.Error{
+					Type:    string(appErr.Type),
+					Message: appErr.Message,
+					Details: utils.ConvertMapToKeyValuePairs(appErr.Details),
+				},
+			}, nil
+		}
+		return &proto.ScheduleReminderResponse{
+			Success: false,
+			Error: &proto.Error{
+				Type:    string(errors.InternalError),
+				Message: "An unexpected error occurred",
+			},
+		}, nil
 	}
 
 	return &proto.ScheduleReminderResponse{}, nil
@@ -44,7 +61,23 @@ func (h *reminderHandler) ScheduleReminder(ctx context.Context, req *proto.Sched
 func (h *reminderHandler) ListReminders(ctx context.Context, req *proto.ListRemindersRequest) (*proto.ListRemindersResponse, error) {
 	reminders, total, err := h.reminderService.ListReminders(req.Page, req.Limit, req.SortBy, req.SortOrder, req.Filter, req.FilterValue)
 	if err != nil {
-		return nil, err
+		if appErr, ok := errors.IsAppError(err); ok {
+			return &proto.ListRemindersResponse{
+				Success: false,
+				Error: &proto.Error{
+					Type:    string(appErr.Type),
+					Message: appErr.Message,
+					Details: utils.ConvertMapToKeyValuePairs(appErr.Details),
+				},
+			}, nil
+		}
+		return &proto.ListRemindersResponse{
+			Success: false,
+			Error: &proto.Error{
+				Type:    string(errors.InternalError),
+				Message: "An unexpected error occurred",
+			},
+		}, nil
 	}
 
 	protoReminders := make([]*proto.Reminder, len(reminders))
@@ -70,7 +103,23 @@ func (h *reminderHandler) ListReminders(ctx context.Context, req *proto.ListRemi
 func (h *reminderHandler) ListCustomerReminders(ctx context.Context, req *proto.ListCustomerRemindersRequest) (*proto.ListRemindersResponse, error) {
 	reminders, total, err := h.reminderService.ListCustomerReminders(req.CustomerId, req.Page, req.Limit, req.SortBy, req.SortOrder, req.Filter, req.FilterValue)
 	if err != nil {
-		return nil, err
+		if appErr, ok := errors.IsAppError(err); ok {
+			return &proto.ListRemindersResponse{
+				Success: false,
+				Error: &proto.Error{
+					Type:    string(appErr.Type),
+					Message: appErr.Message,
+					Details: utils.ConvertMapToKeyValuePairs(appErr.Details),
+				},
+			}, nil
+		}
+		return &proto.ListRemindersResponse{
+			Success: false,
+			Error: &proto.Error{
+				Type:    string(errors.InternalError),
+				Message: "An unexpected error occurred",
+			},
+		}, nil
 	}
 
 	protoReminders := make([]*proto.Reminder, len(reminders))
@@ -96,7 +145,23 @@ func (h *reminderHandler) ListCustomerReminders(ctx context.Context, req *proto.
 func (h *reminderHandler) UpdateReminder(ctx context.Context, req *proto.UpdateReminderRequest) (*proto.UpdateReminderResponse, error) {
 	err := h.reminderService.UpdateReminder(req.ReminderId, req.CustomerId, req.OrderId, req.ReminderDate)
 	if err != nil {
-		return nil, err
+		if appErr, ok := errors.IsAppError(err); ok {
+			return &proto.UpdateReminderResponse{
+				Success: false,
+				Error: &proto.Error{
+					Type:    string(appErr.Type),
+					Message: appErr.Message,
+					Details: utils.ConvertMapToKeyValuePairs(appErr.Details),
+				},
+			}, nil
+		}
+		return &proto.UpdateReminderResponse{
+			Success: false,
+			Error: &proto.Error{
+				Type:    string(errors.InternalError),
+				Message: "An unexpected error occurred",
+			},
+		}, nil
 	}
 
 	return &proto.UpdateReminderResponse{}, nil
@@ -105,7 +170,23 @@ func (h *reminderHandler) UpdateReminder(ctx context.Context, req *proto.UpdateR
 func (h *reminderHandler) DeleteReminder(ctx context.Context, req *proto.DeleteReminderRequest) (*proto.DeleteReminderResponse, error) {
 	err := h.reminderService.DeleteReminder(req.ReminderId, req.CustomerId)
 	if err != nil {
-		return nil, err
+		if appErr, ok := errors.IsAppError(err); ok {
+			return &proto.DeleteReminderResponse{
+				Success: false,
+				Error: &proto.Error{
+					Type:    string(appErr.Type),
+					Message: appErr.Message,
+					Details: utils.ConvertMapToKeyValuePairs(appErr.Details),
+				},
+			}, nil
+		}
+		return &proto.DeleteReminderResponse{
+			Success: false,
+			Error: &proto.Error{
+				Type:    string(errors.InternalError),
+				Message: "An unexpected error occurred",
+			},
+		}, nil
 	}
 
 	return &proto.DeleteReminderResponse{}, nil
@@ -114,7 +195,23 @@ func (h *reminderHandler) DeleteReminder(ctx context.Context, req *proto.DeleteR
 func (h *reminderHandler) ToggleReminder(ctx context.Context, req *proto.ToggleReminderRequest) (*proto.ToggleReminderResponse, error) {
 	err := h.reminderService.ToggleReminder(req.ReminderId, req.ReminderId)
 	if err != nil {
-		return nil, err
+		if appErr, ok := errors.IsAppError(err); ok {
+			return &proto.ToggleReminderResponse{
+				Success: false,
+				Error: &proto.Error{
+					Type:    string(appErr.Type),
+					Message: appErr.Message,
+					Details: utils.ConvertMapToKeyValuePairs(appErr.Details),
+				},
+			}, nil
+		}
+		return &proto.ToggleReminderResponse{
+			Success: false,
+			Error: &proto.Error{
+				Type:    string(errors.InternalError),
+				Message: "An unexpected error occurred",
+			},
+		}, nil
 	}
 
 	return &proto.ToggleReminderResponse{}, nil
@@ -123,7 +220,23 @@ func (h *reminderHandler) ToggleReminder(ctx context.Context, req *proto.ToggleR
 func (h *reminderHandler) ListReminderLogs(ctx context.Context, req *proto.ListReminderLogsRequest) (*proto.ListReminderLogsResponse, error) {
 	reminderLogs, total, err := h.reminderService.ListReminderLogs(req.ReminderId, req.CustomerId, req.Page, req.Limit, req.SortBy, req.SortOrder, req.Filter, req.FilterValue)
 	if err != nil {
-		return nil, err
+		if appErr, ok := errors.IsAppError(err); ok {
+			return &proto.ListReminderLogsResponse{
+				Success: false,
+				Error: &proto.Error{
+					Type:    string(appErr.Type),
+					Message: appErr.Message,
+					Details: utils.ConvertMapToKeyValuePairs(appErr.Details),
+				},
+			}, nil
+		}
+		return &proto.ListReminderLogsResponse{
+			Success: false,
+			Error: &proto.Error{
+				Type:    string(errors.InternalError),
+				Message: "An unexpected error occurred",
+			},
+		}, nil
 	}
 
 	protoReminderLogs := make([]*proto.ReminderLog, len(reminderLogs))
