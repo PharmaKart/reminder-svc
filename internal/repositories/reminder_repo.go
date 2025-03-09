@@ -1,9 +1,11 @@
 package repositories
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/PharmaKart/reminder-svc/internal/models"
+	"github.com/PharmaKart/reminder-svc/pkg/errors"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -28,7 +30,10 @@ func NewReminderRepository(db *gorm.DB) ReminderRepository {
 }
 
 func (r *reminderRepository) ScheduleReminder(reminder *models.Reminder) error {
-	return r.db.Create(reminder).Error
+	if err := r.db.Create(reminder).Error; err != nil {
+		return errors.NewInternalError(err)
+	}
+	return nil
 }
 
 type ReminderWithCustomer struct {
@@ -41,25 +46,33 @@ type ReminderWithCustomer struct {
 func (r *reminderRepository) GetReminderCustomer(reminderID string) (string, error) {
 	var customerID uuid.UUID
 	err := r.db.Table("reminders").Select("customer_id").Where("id = ?", reminderID).Row().Scan(&customerID)
-	return customerID.String(), err
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return "", errors.NewNotFoundError(fmt.Sprintf("Reminder with ID '%s' not found", reminderID))
+		}
+		return "", errors.NewInternalError(err)
+	}
+	return customerID.String(), nil
 }
 
 func (r *reminderRepository) GetPendingReminders() ([]ReminderWithCustomer, error) {
 	var results []ReminderWithCustomer
 
-	// Fetch reminders and join with customers to get email and phone
 	err := r.db.
 		Table("reminders").
-		Select("reminders.*, customers.email, customers.phone").
+		Select("reminders.*, customers.email, customers.phone, products.name as product").
 		Joins("JOIN customers ON customers.id = reminders.customer_id").
 		Joins("JOIN products ON products.id = reminders.product_id").
 		Where("reminder_date <= ? AND enabled = ?", time.Now(), true).
 		Scan(&results).Error
 
-	return results, err
+	if err != nil {
+		return nil, errors.NewInternalError(err)
+	}
+	return results, nil
 }
 
-func (r *reminderRepository) ListReminders(page int32, limit int32, sortBy string, sortOrder string, filter string, filterValue string) ([]models.Reminder, int32, error) {
+func (r *reminderRepository) ListReminders(page, limit int32, sortBy, sortOrder, filter, filterValue string) ([]models.Reminder, int32, error) {
 	var reminders []models.Reminder
 	var total int64
 
@@ -84,20 +97,21 @@ func (r *reminderRepository) ListReminders(page int32, limit int32, sortBy strin
 
 	err := query.Offset(int((page - 1) * limit)).Limit(int(limit)).Find(&reminders).Error
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, errors.NewInternalError(err)
 	}
 
-	err = r.db.Model(&models.Reminder{}).Count(&total).Error
+	err = query.Model(&models.Reminder{}).Count(&total).Error
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, errors.NewInternalError(err)
 	}
 
-	return reminders, int32(total), err
+	return reminders, int32(total), nil
 }
 
 func (r *reminderRepository) ListCustomerReminders(customerID string, page int32, limit int32, sortBy string, sortOrder string, filter string, filterValue string) ([]models.Reminder, int32, error) {
 	var reminders []models.Reminder
 	var total int64
+
 	if page <= 0 {
 		page = 1
 	}
@@ -105,7 +119,7 @@ func (r *reminderRepository) ListCustomerReminders(customerID string, page int32
 		limit = 10
 	}
 
-	query := r.db
+	query := r.db.Where("customer_id = ?", customerID)
 	if filter != "" && filterValue != "" {
 		query = query.Where(filter+" = ?", filterValue)
 	}
@@ -119,32 +133,48 @@ func (r *reminderRepository) ListCustomerReminders(customerID string, page int32
 
 	err := query.Offset(int((page - 1) * limit)).Limit(int(limit)).Find(&reminders).Error
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, errors.NewInternalError(err)
 	}
 
 	err = r.db.Model(&models.Reminder{}).Where("customer_id = ?", customerID).Count(&total).Error
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, errors.NewInternalError(err)
 	}
 
-	return reminders, int32(total), err
+	return reminders, int32(total), nil
 }
 
 func (r *reminderRepository) UpdateReminder(reminder *models.Reminder) error {
-	return r.db.Save(reminder).Error
+	if err := r.db.Save(reminder).Error; err != nil {
+		return errors.NewInternalError(err)
+	}
+	return nil
 }
 
 func (r *reminderRepository) DeleteReminder(reminderID string) error {
-	return r.db.Where("id = ?", reminderID).Delete(&models.Reminder{}).Error
+	result := r.db.Where("id = ?", reminderID).Delete(&models.Reminder{})
+	if result.Error != nil {
+		return errors.NewInternalError(result.Error)
+	}
+	if result.RowsAffected == 0 {
+		return errors.NewNotFoundError(fmt.Sprintf("Reminder with ID '%s' not found", reminderID))
+	}
+	return nil
 }
 
 func (r *reminderRepository) ToggleReminder(reminderID string) error {
 	var reminder models.Reminder
-	err := r.db.Where("id = ?", reminderID).First(&reminder).Error
-	if err != nil {
-		return err
+	if err := r.db.Where("id = ?", reminderID).First(&reminder).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return errors.NewNotFoundError(fmt.Sprintf("Reminder with ID '%s' not found", reminderID))
+		}
+		return errors.NewInternalError(err)
 	}
 
 	reminder.Enabled = !reminder.Enabled
-	return r.db.Save(&reminder).Error
+	if err := r.db.Save(&reminder).Error; err != nil {
+		return errors.NewInternalError(err)
+	}
+
+	return nil
 }

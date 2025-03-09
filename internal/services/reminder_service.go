@@ -2,13 +2,13 @@ package services
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"time"
 
 	"github.com/PharmaKart/reminder-svc/internal/models"
 	"github.com/PharmaKart/reminder-svc/internal/repositories"
 	"github.com/PharmaKart/reminder-svc/pkg/config"
+	"github.com/PharmaKart/reminder-svc/pkg/errors"
 	"github.com/PharmaKart/reminder-svc/pkg/utils"
 	"github.com/google/uuid"
 )
@@ -39,11 +39,23 @@ func NewReminderService(reminderRepo repositories.ReminderRepository, reminderLo
 
 func (s *reminderService) ScheduleReminder(customerID, orderID string, productID string, reminderDate string) error {
 	customer_id, err := uuid.Parse(customerID)
+	if err != nil {
+		return errors.NewInternalError(err)
+	}
+
 	order_id, err := uuid.Parse(orderID)
+	if err != nil {
+		return errors.NewInternalError(err)
+	}
+
 	product_id, err := uuid.Parse(productID)
+	if err != nil {
+		return errors.NewInternalError(err)
+	}
+
 	reminder_date, err := time.Parse(time.RFC3339, reminderDate)
 	if err != nil {
-		return err
+		return errors.NewInternalError(err)
 	}
 
 	reminder := &models.Reminder{
@@ -74,13 +86,21 @@ func (s *reminderService) UpdateReminder(reminderID string, customerId string, o
 	}
 
 	if customerId != customerID {
-		return errors.New("Access denied")
+		return errors.NewAuthError("Access denied")
 	}
 	reminder_id, err := uuid.Parse(reminderID)
+	if err != nil {
+		return errors.NewInternalError(err)
+	}
+
 	order_id, err := uuid.Parse(orderID)
+	if err != nil {
+		return errors.NewInternalError(err)
+	}
+
 	reminder_date, err := time.Parse(time.RFC3339, reminderDate)
 	if err != nil {
-		return err
+		return errors.NewInternalError(err)
 	}
 
 	reminder := &models.Reminder{
@@ -98,7 +118,7 @@ func (s *reminderService) DeleteReminder(reminderID string, customerId string) e
 	}
 
 	if customerId != customerID {
-		return errors.New("Access denied")
+		return errors.NewAuthError("Access denied")
 	}
 
 	return s.reminderRepo.DeleteReminder(reminderID)
@@ -111,7 +131,7 @@ func (s *reminderService) ToggleReminder(reminderID string, customerId string) e
 	}
 
 	if customerId != customerID {
-		return errors.New("Access denied")
+		return errors.NewAuthError("Access denied")
 	}
 
 	return s.reminderRepo.ToggleReminder(reminderID)
@@ -124,7 +144,7 @@ func (s *reminderService) ListReminderLogs(reminderID string, customerId string,
 	}
 
 	if customerId != customerID {
-		return nil, 0, errors.New("Access denied")
+		return nil, 0, errors.NewAuthError("Access denied")
 	}
 
 	return s.reminderLogRepo.ListReminderLogs(reminderID, page, limit, sortBy, sortOrder, filter, filterValue)
@@ -153,7 +173,6 @@ func (s *reminderService) StartReminderService(cfg *config.Config) {
 	// // Initialize AWS session
 	// sess, err := session.NewSession(&aws.Config{
 	// 	Region: aws.String(cfg.AWS_REGION),
-	// 	Credentials: credentials.NewStaticCredentials(cfg.AWS_ACCESS_KEY_ID, cfg.AWS_SECRET_ACCESS_KEY, ""),
 	// })
 	// if err != nil {
 	// 	utils.Error("Failed to initialize AWS session", map[string]interface{}{
