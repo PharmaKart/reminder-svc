@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 
+	"github.com/PharmaKart/reminder-svc/internal/models"
 	"github.com/PharmaKart/reminder-svc/internal/proto"
 	"github.com/PharmaKart/reminder-svc/internal/repositories"
 	"github.com/PharmaKart/reminder-svc/internal/services"
@@ -55,11 +56,21 @@ func (h *reminderHandler) ScheduleReminder(ctx context.Context, req *proto.Sched
 		}, nil
 	}
 
-	return &proto.ScheduleReminderResponse{}, nil
+	return &proto.ScheduleReminderResponse{
+		Success: true,
+	}, nil
 }
 
 func (h *reminderHandler) ListReminders(ctx context.Context, req *proto.ListRemindersRequest) (*proto.ListRemindersResponse, error) {
-	reminders, total, err := h.reminderService.ListReminders(req.Page, req.Limit, req.SortBy, req.SortOrder, req.Filter, req.FilterValue)
+	var filter models.Filter
+	if req.Filter != nil {
+		filter = models.Filter{
+			Column:   req.Filter.Column,
+			Operator: req.Filter.Operator,
+			Value:    req.Filter.Value,
+		}
+	}
+	reminders, total, err := h.reminderService.ListReminders(filter, req.SortBy, req.SortOrder, req.Page, req.Limit)
 	if err != nil {
 		if appErr, ok := errors.IsAppError(err); ok {
 			return &proto.ListRemindersResponse{
@@ -93,6 +104,7 @@ func (h *reminderHandler) ListReminders(ctx context.Context, req *proto.ListRemi
 	}
 
 	return &proto.ListRemindersResponse{
+		Success:   true,
 		Reminders: protoReminders,
 		Total:     total,
 		Page:      req.Page,
@@ -101,7 +113,15 @@ func (h *reminderHandler) ListReminders(ctx context.Context, req *proto.ListRemi
 }
 
 func (h *reminderHandler) ListCustomerReminders(ctx context.Context, req *proto.ListCustomerRemindersRequest) (*proto.ListRemindersResponse, error) {
-	reminders, total, err := h.reminderService.ListCustomerReminders(req.CustomerId, req.Page, req.Limit, req.SortBy, req.SortOrder, req.Filter, req.FilterValue)
+	var filter models.Filter
+	if req.Filter != nil {
+		filter = models.Filter{
+			Column:   req.Filter.Column,
+			Operator: req.Filter.Operator,
+			Value:    req.Filter.Value,
+		}
+	}
+	reminders, total, err := h.reminderService.ListCustomerReminders(req.CustomerId, filter, req.SortBy, req.SortOrder, req.Page, req.Limit)
 	if err != nil {
 		if appErr, ok := errors.IsAppError(err); ok {
 			return &proto.ListRemindersResponse{
@@ -135,6 +155,7 @@ func (h *reminderHandler) ListCustomerReminders(ctx context.Context, req *proto.
 	}
 
 	return &proto.ListRemindersResponse{
+		Success:   true,
 		Reminders: protoReminders,
 		Total:     total,
 		Page:      req.Page,
@@ -164,7 +185,9 @@ func (h *reminderHandler) UpdateReminder(ctx context.Context, req *proto.UpdateR
 		}, nil
 	}
 
-	return &proto.UpdateReminderResponse{}, nil
+	return &proto.UpdateReminderResponse{
+		Success: true,
+	}, nil
 }
 
 func (h *reminderHandler) DeleteReminder(ctx context.Context, req *proto.DeleteReminderRequest) (*proto.DeleteReminderResponse, error) {
@@ -189,7 +212,9 @@ func (h *reminderHandler) DeleteReminder(ctx context.Context, req *proto.DeleteR
 		}, nil
 	}
 
-	return &proto.DeleteReminderResponse{}, nil
+	return &proto.DeleteReminderResponse{
+		Success: true,
+	}, nil
 }
 
 func (h *reminderHandler) ToggleReminder(ctx context.Context, req *proto.ToggleReminderRequest) (*proto.ToggleReminderResponse, error) {
@@ -214,11 +239,21 @@ func (h *reminderHandler) ToggleReminder(ctx context.Context, req *proto.ToggleR
 		}, nil
 	}
 
-	return &proto.ToggleReminderResponse{}, nil
+	return &proto.ToggleReminderResponse{
+		Success: true,
+	}, nil
 }
 
 func (h *reminderHandler) ListReminderLogs(ctx context.Context, req *proto.ListReminderLogsRequest) (*proto.ListReminderLogsResponse, error) {
-	reminderLogs, total, err := h.reminderService.ListReminderLogs(req.ReminderId, req.CustomerId, req.Page, req.Limit, req.SortBy, req.SortOrder, req.Filter, req.FilterValue)
+	var filter models.Filter
+	if req.Filter != nil {
+		filter = models.Filter{
+			Column:   req.Filter.Column,
+			Operator: req.Filter.Operator,
+			Value:    req.Filter.Value,
+		}
+	}
+	reminderLogs, total, err := h.reminderService.ListReminderLogs(req.ReminderId, req.CustomerId, filter, req.SortBy, req.SortOrder, req.Page, req.Limit)
 	if err != nil {
 		if appErr, ok := errors.IsAppError(err); ok {
 			return &proto.ListReminderLogsResponse{
@@ -251,10 +286,11 @@ func (h *reminderHandler) ListReminderLogs(ctx context.Context, req *proto.ListR
 	}
 
 	return &proto.ListReminderLogsResponse{
-		Logs:  protoReminderLogs,
-		Total: total,
-		Page:  req.Page,
-		Limit: req.Limit,
+		Success: true,
+		Logs:    protoReminderLogs,
+		Total:   total,
+		Page:    req.Page,
+		Limit:   req.Limit,
 	}, nil
 }
 

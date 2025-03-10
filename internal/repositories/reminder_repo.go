@@ -2,10 +2,12 @@ package repositories
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/PharmaKart/reminder-svc/internal/models"
 	"github.com/PharmaKart/reminder-svc/pkg/errors"
+	"github.com/PharmaKart/reminder-svc/pkg/utils"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -14,8 +16,8 @@ type ReminderRepository interface {
 	GetReminderCustomer(reminderID string) (string, error)
 	ScheduleReminder(reminder *models.Reminder) error
 	GetPendingReminders() ([]ReminderWithCustomer, error)
-	ListReminders(page int32, limit int32, sortBy string, sortOrder string, filter string, filterValue string) ([]models.Reminder, int32, error)
-	ListCustomerReminders(customerID string, page int32, limit int32, sortBy string, sortOrder string, filter string, filterValue string) ([]models.Reminder, int32, error)
+	ListReminders(filter models.Filter, sortBy string, sortOrder string, page, limit int32) ([]models.Reminder, int32, error)
+	ListCustomerReminders(customerID string, filter models.Filter, sortBy string, sortOrder string, page, limit int32) ([]models.Reminder, int32, error)
 	UpdateReminder(reminder *models.Reminder) error
 	DeleteReminder(reminderID string) error
 	ToggleReminder(reminderID string) error
@@ -72,35 +74,75 @@ func (r *reminderRepository) GetPendingReminders() ([]ReminderWithCustomer, erro
 	return results, nil
 }
 
-func (r *reminderRepository) ListReminders(page, limit int32, sortBy, sortOrder, filter, filterValue string) ([]models.Reminder, int32, error) {
+func (r *reminderRepository) ListReminders(filter models.Filter, sortBy string, sortOrder string, page, limit int32) ([]models.Reminder, int32, error) {
 	var reminders []models.Reminder
 	var total int64
 
-	if page <= 0 {
-		page = 1
-	}
-	if limit <= 0 {
-		limit = 10
+	allowedColumns := utils.GetModelColumns(&models.Reminder{})
+
+	allowedOperators := map[string]string{
+		"eq":      "=",           // Equal to
+		"neq":     "!=",          // Not equal to
+		"gt":      ">",           // Greater than
+		"gte":     ">=",          // Greater than or equal to
+		"lt":      "<",           // Less than
+		"lte":     "<=",          // Less than or equal to
+		"like":    "LIKE",        // LIKE for pattern matching
+		"ilike":   "ILIKE",       // Case insensitive LIKE (for PostgreSQL)
+		"in":      "IN",          // IN for multiple values
+		"null":    "IS NULL",     // IS NULL check
+		"notnull": "IS NOT NULL", // IS NOT NULL check
 	}
 
-	query := r.db
-	if filter != "" && filterValue != "" {
-		query = query.Where(filter+" = ?", filterValue)
+	query := r.db.Model(&models.Reminder{})
+
+	if filter != (models.Filter{}) {
+		if _, allowed := allowedColumns[filter.Column]; !allowed {
+			return nil, 0, errors.NewBadRequestError("invalid filter column: " + filter.Column)
+		}
+
+		op, allowed := allowedOperators[filter.Operator]
+		if !allowed {
+			return nil, 0, errors.NewBadRequestError("invalid filter operator: " + filter.Operator)
+		}
+
+		switch filter.Operator {
+		case "like", "ilike":
+			query = query.Where(filter.Column+" "+op+" ?", "%"+filter.Value+"%")
+		case "in":
+			values := strings.Split(filter.Value, ",")
+			query = query.Where(filter.Column+" "+op+" (?)", values)
+		case "null", "notnull":
+			query = query.Where(filter.Column + " " + op)
+		default:
+			query = query.Where(filter.Column+" "+op+" ?", filter.Value)
+		}
 	}
 
 	if sortBy != "" {
-		if sortOrder == "" {
+		if _, allowed := allowedColumns[sortBy]; !allowed {
+			return nil, 0, errors.NewBadRequestError("invalid sort column: " + sortBy)
+		}
+
+		sortOrder = strings.ToLower(sortOrder)
+		if sortOrder != "asc" && sortOrder != "desc" {
 			sortOrder = "asc"
 		}
+
 		query = query.Order(sortBy + " " + sortOrder)
 	}
 
-	err := query.Offset(int((page - 1) * limit)).Limit(int(limit)).Find(&reminders).Error
+	err := query.Count(&total).Error
 	if err != nil {
 		return nil, 0, errors.NewInternalError(err)
 	}
 
-	err = query.Model(&models.Reminder{}).Count(&total).Error
+	if limit > 0 {
+		offset := max(int((page-1)*limit), 0)
+		query = query.Offset(offset).Limit(int(limit))
+	}
+
+	err = query.Find(&reminders).Error
 	if err != nil {
 		return nil, 0, errors.NewInternalError(err)
 	}
@@ -108,35 +150,75 @@ func (r *reminderRepository) ListReminders(page, limit int32, sortBy, sortOrder,
 	return reminders, int32(total), nil
 }
 
-func (r *reminderRepository) ListCustomerReminders(customerID string, page int32, limit int32, sortBy string, sortOrder string, filter string, filterValue string) ([]models.Reminder, int32, error) {
+func (r *reminderRepository) ListCustomerReminders(customerID string, filter models.Filter, sortBy string, sortOrder string, page, limit int32) ([]models.Reminder, int32, error) {
 	var reminders []models.Reminder
 	var total int64
 
-	if page <= 0 {
-		page = 1
-	}
-	if limit <= 0 {
-		limit = 10
+	allowedColumns := utils.GetModelColumns(&models.Reminder{})
+
+	allowedOperators := map[string]string{
+		"eq":      "=",           // Equal to
+		"neq":     "!=",          // Not equal to
+		"gt":      ">",           // Greater than
+		"gte":     ">=",          // Greater than or equal to
+		"lt":      "<",           // Less than
+		"lte":     "<=",          // Less than or equal to
+		"like":    "LIKE",        // LIKE for pattern matching
+		"ilike":   "ILIKE",       // Case insensitive LIKE (for PostgreSQL)
+		"in":      "IN",          // IN for multiple values
+		"null":    "IS NULL",     // IS NULL check
+		"notnull": "IS NOT NULL", // IS NOT NULL check
 	}
 
-	query := r.db.Where("customer_id = ?", customerID)
-	if filter != "" && filterValue != "" {
-		query = query.Where(filter+" = ?", filterValue)
+	query := r.db.Model(&models.Reminder{}).Where("customer_id = ?", customerID)
+
+	if filter != (models.Filter{}) {
+		if _, allowed := allowedColumns[filter.Column]; !allowed {
+			return nil, 0, errors.NewBadRequestError("invalid filter column: " + filter.Column)
+		}
+
+		op, allowed := allowedOperators[filter.Operator]
+		if !allowed {
+			return nil, 0, errors.NewBadRequestError("invalid filter operator: " + filter.Operator)
+		}
+
+		switch filter.Operator {
+		case "like", "ilike":
+			query = query.Where(filter.Column+" "+op+" ?", "%"+filter.Value+"%")
+		case "in":
+			values := strings.Split(filter.Value, ",")
+			query = query.Where(filter.Column+" "+op+" (?)", values)
+		case "null", "notnull":
+			query = query.Where(filter.Column + " " + op)
+		default:
+			query = query.Where(filter.Column+" "+op+" ?", filter.Value)
+		}
 	}
 
 	if sortBy != "" {
-		if sortOrder == "" {
+		if _, allowed := allowedColumns[sortBy]; !allowed {
+			return nil, 0, errors.NewBadRequestError("invalid sort column: " + sortBy)
+		}
+
+		sortOrder = strings.ToLower(sortOrder)
+		if sortOrder != "asc" && sortOrder != "desc" {
 			sortOrder = "asc"
 		}
+
 		query = query.Order(sortBy + " " + sortOrder)
 	}
 
-	err := query.Offset(int((page - 1) * limit)).Limit(int(limit)).Find(&reminders).Error
+	err := query.Count(&total).Error
 	if err != nil {
 		return nil, 0, errors.NewInternalError(err)
 	}
 
-	err = r.db.Model(&models.Reminder{}).Where("customer_id = ?", customerID).Count(&total).Error
+	if limit > 0 {
+		offset := max(int((page-1)*limit), 0)
+		query = query.Offset(offset).Limit(int(limit))
+	}
+
+	err = query.Find(&reminders).Error
 	if err != nil {
 		return nil, 0, errors.NewInternalError(err)
 	}
