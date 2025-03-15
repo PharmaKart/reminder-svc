@@ -12,7 +12,7 @@ type ReminderLog struct {
 	ReminderID uuid.UUID `gorm:"not null"`
 	OrderID    uuid.UUID `gorm:"not null"`
 	Status     string    `gorm:"not null"`
-	CreatedAt  time.Time `gorm:"default:now()"`
+	CreatedAt  time.Time `gorm:"type:timestamptz;default:now()"`
 }
 
 func (rl *ReminderLog) BeforeCreate(tx *gorm.DB) (err error) {
