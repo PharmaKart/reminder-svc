@@ -12,8 +12,8 @@ type Reminder struct {
 	CustomerID   uuid.UUID `gorm:"not null"`
 	OrderID      uuid.UUID `gorm:"not null"`
 	ProductID    uuid.UUID `gorm:"not null"`
-	ReminderDate time.Time `gorm:"not null"`
-	LastSentAt   time.Time `gorm:"default:null"`
+	ReminderDate time.Time `gorm:"type:timestamptz;not null"`
+	LastSentAt   time.Time `gorm:"type:timestamptz;default:null"`
 	Enabled      bool      `gorm:"default:true"`
 	CreatedAt    time.Time `gorm:"type:timestamptz;default:now()"`
 }

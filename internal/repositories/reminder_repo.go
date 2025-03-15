@@ -21,6 +21,7 @@ type ReminderRepository interface {
 	UpdateReminder(reminder *models.Reminder) error
 	DeleteReminder(reminderID string) error
 	ToggleReminder(reminderID string) error
+	ReminderExists(productID, customerID string) (bool, error)
 }
 
 type reminderRepository struct {
@@ -55,6 +56,15 @@ func (r *reminderRepository) GetReminderCustomer(reminderID string) (string, err
 		return "", errors.NewInternalError(err)
 	}
 	return customerID.String(), nil
+}
+
+func (r *reminderRepository) ReminderExists(productID, customerID string) (bool, error) {
+	var count int64
+	err := r.db.Model(&models.Reminder{}).Where("product_id = ? AND customer_id = ?", productID, customerID).Count(&count).Error
+	if err != nil {
+		return false, errors.NewInternalError(err)
+	}
+	return count > 0, nil
 }
 
 func (r *reminderRepository) GetPendingReminders() ([]ReminderWithCustomer, error) {

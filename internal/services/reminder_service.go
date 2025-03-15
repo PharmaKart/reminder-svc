@@ -58,6 +58,16 @@ func (s *reminderService) ScheduleReminder(customerID, orderID string, productID
 		return errors.NewInternalError(err)
 	}
 
+	// Check if reminder already exists with same product and customer
+	reminderExists, err := s.reminderRepo.ReminderExists(productID, customerID)
+	if err != nil {
+		return errors.NewInternalError(err)
+	}
+
+	if reminderExists {
+		return errors.NewConflictError("Reminder already exists for this product")
+	}
+
 	reminder := &models.Reminder{
 		CustomerID:   customer_id,
 		OrderID:      order_id,
