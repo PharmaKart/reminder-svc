@@ -15,7 +15,7 @@ type Reminder struct {
 	ReminderDate time.Time `gorm:"not null"`
 	LastSentAt   time.Time `gorm:"default:null"`
 	Enabled      bool      `gorm:"default:true"`
-	CreatedAt    time.Time `gorm:"default:now()"`
+	CreatedAt    time.Time `gorm:"type:timestamptz;default:now()"`
 }
 
 func (r *Reminder) BeforeCreate(tx *gorm.DB) (err error) {
